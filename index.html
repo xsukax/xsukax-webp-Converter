@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xsukax webp Converter</title>
+    <style>
+        :root { --primary-color: #24292e; --secondary-color: #0366d6; --background-color: #ffffff; --border-color: #e1e4e8; --text-color: #24292e; --success-color: #28a745; --error-color: #cb2431; --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+        body { background-color: #f6f8fa; color: var(--text-color); line-height: 1.5; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 2rem 1rem; }
+        .container { max-width: 600px; width: 100%; background: var(--background-color); border-radius: 6px; box-shadow: var(--shadow); padding: 2rem; }
+        header { text-align: center; margin-bottom: 2rem; }
+        h1 { font-size: 1.8rem; font-weight: 600; color: var(--primary-color); margin-bottom: 0.5rem; }
+        .subtitle { color: #586069; font-size: 1rem; }
+        .upload-area { border: 2px dashed var(--border-color); border-radius: 6px; padding: 2rem; text-align: center; margin-bottom: 1.5rem; transition: all 0.3s; cursor: pointer; }
+        .upload-area:hover, .upload-area.dragover { border-color: var(--secondary-color); background-color: #f6f8fa; }
+        .upload-icon { font-size: 3rem; color: #586069; margin-bottom: 1rem; }
+        .upload-text { margin-bottom: 1rem; }
+        .file-input { display: none; }
+        .btn { display: inline-block; padding: 0.5rem 1rem; background-color: var(--secondary-color); color: white; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: background-color 0.2s; text-decoration: none; }
+        .btn:hover { background-color: #0256b3; }
+        .btn:disabled { background-color: #6a737d; cursor: not-allowed; }
+        .btn-secondary { background-color: #6a737d; }
+        .btn-secondary:hover { background-color: #586069; }
+        .format-selector { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1.5rem; }
+        .format-option { display: flex; align-items: center; }
+        .format-option input { margin-right: 0.5rem; }
+        .preview-area { display: none; margin-bottom: 1.5rem; text-align: center; }
+        .preview-area h3 { margin-bottom: 1rem; font-size: 1.2rem; color: var(--primary-color); }
+        .preview-img { max-width: 100%; max-height: 300px; border-radius: 6px; box-shadow: var(--shadow); }
+        .action-buttons { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1.5rem; }
+        .message { padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; display: none; }
+        .message.success { background-color: #d4edda; color: var(--success-color); border: 1px solid #c3e6cb; display: block; }
+        .message.error { background-color: #f8d7da; color: var(--error-color); border: 1px solid #f5c6cb; display: block; }
+        footer { margin-top: 2rem; text-align: center; color: #586069; font-size: 0.9rem; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>xsukax webp Converter</h1>
+            <p class="subtitle">Convert WebP images to PNG or JPG format entirely in your browser</p>
+        </header>
+        
+        <main>
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <p class="upload-text">Drag & drop a WebP image here or click to browse</p>
+                <input type="file" id="fileInput" class="file-input" accept=".webp,image/webp">
+            </div>
+            
+            <div class="message" id="message"></div>
+            
+            <div class="format-selector">
+                <div class="format-option">
+                    <input type="radio" id="formatPng" name="format" value="png" checked>
+                    <label for="formatPng">Convert to PNG</label>
+                </div>
+                <div class="format-option">
+                    <input type="radio" id="formatJpg" name="format" value="jpg">
+                    <label for="formatJpg">Convert to JPG</label>
+                </div>
+            </div>
+            
+            <div class="preview-area" id="previewArea">
+                <h3>Preview</h3>
+                <img id="previewImg" class="preview-img" src="" alt="Preview">
+            </div>
+            
+            <div class="action-buttons">
+                <button id="convertBtn" class="btn" disabled>Convert</button>
+                <a id="downloadBtn" class="btn btn-secondary hidden" download>Download</a>
+                <button id="resetBtn" class="btn btn-secondary">Reset</button>
+            </div>
+        </main>
+    </div>
+    
+    <footer>
+        <p>© 2025 xsukax webp Converter | All processing happens in your browser</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadArea = document.getElementById('uploadArea');
+            const convertBtn = document.getElementById('convertBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const previewArea = document.getElementById('previewArea');
+            const previewImg = document.getElementById('previewImg');
+            const message = document.getElementById('message');
+            
+            let currentFile = null;
+            
+            // Upload area click handler - triggers file input
+            uploadArea.addEventListener('click', (e) => {
+                // Prevent double trigger by checking if click originated from file input
+                if (e.target !== fileInput) {
+                    fileInput.click();
+                }
+            });
+            
+            // Drag and drop handlers
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                if (e.dataTransfer.files.length) {
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
+            
+            // File input change handler
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+            
+            // Convert button handler
+            convertBtn.addEventListener('click', convertImage);
+            
+            // Reset button handler
+            resetBtn.addEventListener('click', resetApp);
+            
+            // Handle file selection
+            function handleFile(file) {
+                // Validate file type
+                if (!file.type.includes('webp') && !file.name.toLowerCase().endsWith('.webp')) {
+                    showMessage('Please select a WebP image file.', 'error');
+                    return;
+                }
+                
+                currentFile = file;
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    previewArea.style.display = 'block';
+                    convertBtn.disabled = false;
+                    showMessage('WebP image loaded successfully. Select format and click Convert.', 'success');
+                };
+                reader.onerror = () => {
+                    showMessage('Error reading file. Please try again.', 'error');
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            // Convert image function
+            function convertImage() {
+                if (!currentFile) return;
+                
+                const selectedFormat = document.querySelector('input[name="format"]:checked').value;
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                showMessage('Converting...', 'success');
+                
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    let mimeType, fileExtension, quality;
+                    if (selectedFormat === 'png') {
+                        mimeType = 'image/png';
+                        fileExtension = 'png';
+                    } else {
+                        mimeType = 'image/jpeg';
+                        fileExtension = 'jpg';
+                        quality = 0.95;
+                    }
+                    
+                    canvas.toBlob((blob) => {
+                        if (!blob) {
+                            showMessage('Conversion failed. Please try again.', 'error');
+                            return;
+                        }
+                        
+                        const url = URL.createObjectURL(blob);
+                        
+                        // Update download link
+                        downloadBtn.href = url;
+                        const originalName = currentFile.name.replace(/\.[^/.]+$/, '');
+                        downloadBtn.download = `${originalName}.${fileExtension}`;
+                        downloadBtn.classList.remove('hidden');
+                        
+                        showMessage(`Image converted to ${selectedFormat.toUpperCase()} successfully!`, 'success');
+                    }, mimeType, quality);
+                };
+                
+                img.onerror = function() {
+                    showMessage('Error loading image for conversion. Please try a different file.', 'error');
+                };
+                
+                img.src = URL.createObjectURL(currentFile);
+            }
+            
+            // Reset app function
+            function resetApp() {
+                fileInput.value = '';
+                currentFile = null;
+                previewArea.style.display = 'none';
+                convertBtn.disabled = true;
+                downloadBtn.classList.add('hidden');
+                message.style.display = 'none';
+                
+                // Revoke object URLs to free memory
+                if (previewImg.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(previewImg.src);
+                }
+                if (downloadBtn.href.startsWith('blob:')) {
+                    URL.revokeObjectURL(downloadBtn.href);
+                }
+                
+                previewImg.src = '';
+            }
+            
+            // Show message function
+            function showMessage(text, type) {
+                message.textContent = text;
+                message.className = 'message ' + type;
+            }
+        });
+    </script>
+</body>
+</html>
